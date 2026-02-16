@@ -97,12 +97,20 @@ def create_rlm(args: argparse.Namespace) -> RLM:
 
     logger = RLMLogger(log_dir=args.log_dir) if args.log_dir else None
 
+    # Build system prompt with extraction context if enabled
+    custom_prompt = None
+    if args.extract:
+        from rlm_legal_docs.prompts import build_system_prompt
+
+        custom_prompt = build_system_prompt(extraction_enabled=True)
+
     return RLM(
         backend=args.backend,
         backend_kwargs=backend_kwargs,
         environment="local",
         max_depth=args.max_depth,
         max_iterations=args.max_iterations,
+        custom_system_prompt=custom_prompt,
         logger=logger,
         verbose=args.verbose,
         persistent=True,
@@ -162,6 +170,37 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--log-dir", type=str, default=None, help="Directory for RLM logs.")
     p.add_argument("--verbose", "-v", action="store_true", help="Print RLM progress.")
 
+    # --- Extraction ---
+    p.add_argument(
+        "--extract",
+        action="store_true",
+        default=False,
+        help="Enable LangExtract preprocessing.",
+    )
+    p.add_argument("--no-extract", dest="extract", action="store_false")
+    p.add_argument(
+        "--extract-model",
+        default="gemini-2.5-flash",
+        help="LangExtract model (default: gemini-2.5-flash).",
+    )
+    p.add_argument(
+        "--extract-schema",
+        default="general",
+        choices=["general", "contract"],
+        help="Extraction schema (default: general).",
+    )
+    p.add_argument(
+        "--extract-api-key",
+        default=None,
+        help="LangExtract API key (or set LANGEXTRACT_API_KEY env var).",
+    )
+    p.add_argument(
+        "--extract-passes",
+        type=int,
+        default=2,
+        help="Number of extraction passes (default: 2).",
+    )
+
     return p.parse_args()
 
 
@@ -178,6 +217,28 @@ def main() -> None:
     docs = ingest_folder(folder)
     context = build_structured_context(docs)
     print(f"\n  Loaded {len(docs)} document(s)  ({len(context):,} chars total)\n")
+
+    # --- 1.5 Run extraction if enabled ---
+    if args.extract:
+        from rlm_legal_docs.extraction import build_enriched_context, run_batch_extraction
+
+        print("[1.5/3] Running LangExtract extraction...\n")
+        api_key = args.extract_api_key or os.getenv("LANGEXTRACT_API_KEY")
+        results, _annotated = run_batch_extraction(
+            docs,
+            schema_name=args.extract_schema,
+            model_id=args.extract_model,
+            api_key=api_key,
+            extraction_passes=args.extract_passes,
+        )
+        context = build_enriched_context(results, context)
+
+        total = sum(len(r.extractions) for r in results if not r.error)
+        errors = sum(1 for r in results if r.error)
+        print(f"  Extracted {total} entities from {len(results)} doc(s)")
+        if errors:
+            print(f"  ({errors} document(s) had extraction errors)")
+        print()
 
     # --- 2. Create RLM instance ---
     print("[2/3] Initialising RLM...\n")

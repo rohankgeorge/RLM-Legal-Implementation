@@ -4,6 +4,7 @@ Wires together the file selector, config sidebar, and chat frame.
 """
 
 import tempfile
+import webbrowser
 from queue import Queue
 
 import customtkinter as ctk
@@ -22,6 +23,7 @@ from rlm_legal_docs.constants import (
     SIDEBAR_WIDTH,
 )
 from rlm_legal_docs.file_frame import FileFrame
+from rlm_legal_docs.prompts import build_system_prompt
 from rlm_legal_docs.workers import IngestWorker, QueryWorker
 
 
@@ -50,6 +52,8 @@ class RLMChatApp(ctk.CTk):
         self._context: str = ""
         self._result_queue: Queue = Queue()
         self._query_active = False
+        self._extraction_results: list = []
+        self._viz_path: str | None = None
 
         # Build UI
         self._build_ui()
@@ -94,6 +98,7 @@ class RLMChatApp(ctk.CTk):
             sidebar,
             on_start_session=self._on_start_session,
             on_reset_session=self._on_reset_session,
+            on_view_extractions=self._on_view_extractions,
         )
         self.config_frame.pack(fill="both", expand=True)
 
@@ -143,8 +148,20 @@ class RLMChatApp(ctk.CTk):
         self.config_frame.start_btn.configure(state="disabled")
         self.file_frame.set_enabled(False)
 
+        # Build extraction config if enabled
+        extraction_config = None
+        if config.get("extraction_enabled"):
+            extraction_config = {
+                "enabled": True,
+                "schema": config.get("extraction_schema", "general"),
+                "model_id": config.get("extraction_model", "gemini-2.5-flash"),
+                "api_key": config.get("extraction_api_key"),
+                "passes": config.get("extraction_passes", 2),
+            }
+            self._update_status("Status: Ingesting documents + running extraction...")
+
         # Start ingestion worker
-        worker = IngestWorker(files, self._result_queue)
+        worker = IngestWorker(files, self._result_queue, extraction_config=extraction_config)
         worker.start()
 
     def _create_rlm(self, config: dict) -> RLM:
@@ -154,10 +171,13 @@ class RLMChatApp(ctk.CTk):
             "api_key": config["api_key"],
         }
 
-        # Custom instructions
-        custom_prompt = None
-        if config.get("custom_instructions"):
-            custom_prompt = config["custom_instructions"] + "\n\n" + RLM_SYSTEM_PROMPT
+        # Build system prompt with extraction context if available
+        extraction_enabled = bool(self._extraction_results)
+        custom_prompt = build_system_prompt(
+            extraction_enabled=extraction_enabled,
+            custom_instructions=config.get("custom_instructions"),
+            base_prompt=RLM_SYSTEM_PROMPT,
+        )
 
         # Sub-query model
         other_backends = None
@@ -200,6 +220,8 @@ class RLMChatApp(ctk.CTk):
         self._logger = None
         self._context = ""
         self._query_active = False
+        self._extraction_results = []
+        self._viz_path = None
 
         # Reset UI
         self.config_frame.set_session_active(False)
@@ -208,6 +230,11 @@ class RLMChatApp(ctk.CTk):
         self.chat_frame.set_input_enabled(False)
         self.chat_frame.clear_chat()
         self._update_status("Status: Ready")
+
+    def _on_view_extractions(self):
+        """Open extraction visualization in browser."""
+        if self._viz_path:
+            webbrowser.open(self._viz_path)
 
     def _on_send_query(self, query: str):
         """Handle sending a query from the chat input."""
@@ -223,7 +250,12 @@ class RLMChatApp(ctk.CTk):
         self._update_status("Status: Processing query...")
 
         worker = QueryWorker(
-            self._rlm, self._context, query, self._result_queue, logger=self._logger
+            self._rlm,
+            self._context,
+            query,
+            self._result_queue,
+            logger=self._logger,
+            extraction_results=self._extraction_results,
         )
         worker.start()
 
@@ -250,6 +282,8 @@ class RLMChatApp(ctk.CTk):
         errors = result.get("errors", [])
 
         self._context = context
+        self._extraction_results = result.get("extraction_results", [])
+        self._viz_path = result.get("viz_path")
 
         # Create RLM instance
         config = self.config_frame.get_config()
@@ -265,7 +299,15 @@ class RLMChatApp(ctk.CTk):
         doc_count = len(docs)
         char_count = len(context)
         status_text = f"{doc_count} doc(s), {char_count:,} chars"
-        self.config_frame.set_session_active(True)
+
+        # Add extraction stats if available
+        if self._extraction_results:
+            total_extractions = sum(
+                len(r.extractions) for r in self._extraction_results if not r.error
+            )
+            status_text += f", {total_extractions} extractions"
+
+        self.config_frame.set_session_active(True, has_viz=bool(self._viz_path))
         self.config_frame.set_status(status_text)
         self.chat_frame.set_input_enabled(True)
         self._update_status(
@@ -274,6 +316,14 @@ class RLMChatApp(ctk.CTk):
 
         # Show success in chat
         msg = f"Session started! Loaded {doc_count} document(s) ({char_count:,} characters)."
+        if self._extraction_results:
+            total_extractions = sum(
+                len(r.extractions) for r in self._extraction_results if not r.error
+            )
+            extract_errors = sum(1 for r in self._extraction_results if r.error)
+            msg += f"\nExtracted {total_extractions} entities from {len(self._extraction_results)} document(s)."
+            if extract_errors:
+                msg += f" ({extract_errors} document(s) had extraction errors.)"
         if errors:
             msg += "\n\nWarnings:\n" + "\n".join(f"  - {e}" for e in errors)
         msg += "\n\nYou can now ask questions about your documents."
@@ -292,6 +342,7 @@ class RLMChatApp(ctk.CTk):
             log_file=result.get("log_file"),
             log_start_iter=result.get("log_start_iter", 0),
             log_end_iter=result.get("log_end_iter"),
+            enriched=result.get("enriched"),
         )
         self._query_active = False
         self.chat_frame.set_input_enabled(True)

@@ -64,3 +64,9 @@ CONFIG_FILE = "~/.rlm_gui_config.json"
 
 # Worker polling interval (ms)
 POLL_INTERVAL_MS = 100
+
+# Extraction defaults
+DEFAULT_EXTRACT_MODEL = "gemini-2.5-flash"
+DEFAULT_EXTRACT_PASSES = 2
+EXTRACTION_CACHE_DIR = "~/.rlm_extractions"
+EXTRACTION_SCHEMAS = ["general", "contract"]

@@ -1,6 +1,7 @@
 """
 RLM configuration sidebar frame.
-Includes primary model, sub-query model, custom instructions, and session controls.
+Includes primary model, sub-query model, custom instructions,
+extraction settings, and session controls.
 """
 
 import json
@@ -13,8 +14,11 @@ from rlm_legal_docs.constants import (
     BACKENDS,
     COLORS,
     CONFIG_FILE,
+    DEFAULT_EXTRACT_MODEL,
+    DEFAULT_EXTRACT_PASSES,
     DEFAULT_MODEL,
     DEFAULT_SUB_MODEL,
+    EXTRACTION_SCHEMAS,
     FONT_FAMILY,
     FONT_SIZE,
     FONT_SIZE_SMALL,
@@ -24,11 +28,19 @@ from rlm_legal_docs.constants import (
 class ConfigFrame(ctk.CTkFrame):
     """Sidebar panel for RLM configuration."""
 
-    def __init__(self, master, on_start_session=None, on_reset_session=None, **kwargs):
+    def __init__(
+        self,
+        master,
+        on_start_session=None,
+        on_reset_session=None,
+        on_view_extractions=None,
+        **kwargs,
+    ):
         super().__init__(master, fg_color=COLORS["bg_dark"], **kwargs)
 
         self._on_start_session = on_start_session
         self._on_reset_session = on_reset_session
+        self._on_view_extractions = on_view_extractions
         self._config_path = Path(CONFIG_FILE).expanduser()
         self._saved_config = self._load_config()
 
@@ -179,6 +191,70 @@ class ConfigFrame(ctk.CTkFrame):
         )
         self.verbose_check.pack(fill="x", padx=5, pady=(0, 10))
 
+        # --- Extraction Settings ---
+        self._section_label(parent, "Extraction Settings")
+
+        self.extract_var = ctk.BooleanVar(value=False)
+        self.extract_check = ctk.CTkCheckBox(
+            parent,
+            text="Enable LangExtract preprocessing",
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            text_color=COLORS["text"],
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["accent"],
+            variable=self.extract_var,
+            command=self._toggle_extraction,
+        )
+        self.extract_check.pack(fill="x", padx=5, pady=(0, 5))
+
+        # Extraction fields (initially hidden)
+        self.extract_frame = ctk.CTkFrame(parent, fg_color="transparent")
+
+        self._label(self.extract_frame, "Schema:")
+        self.extract_schema_var = ctk.StringVar(value="general")
+        self.extract_schema_dropdown = ctk.CTkOptionMenu(
+            self.extract_frame,
+            variable=self.extract_schema_var,
+            values=EXTRACTION_SCHEMAS,
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            fg_color=COLORS["bg_medium"],
+            button_color=COLORS["bg_light"],
+            button_hover_color=COLORS["border"],
+            text_color=COLORS["text"],
+            dropdown_fg_color=COLORS["bg_medium"],
+            dropdown_text_color=COLORS["text"],
+            dropdown_hover_color=COLORS["bg_light"],
+        )
+        self.extract_schema_dropdown.pack(fill="x", padx=5, pady=(0, 5))
+
+        self._label(self.extract_frame, "Extraction Model:")
+        self.extract_model_entry = self._entry(self.extract_frame, DEFAULT_EXTRACT_MODEL)
+
+        self._label(self.extract_frame, "LangExtract API Key:")
+        self.extract_api_key_entry = self._entry(self.extract_frame, "", show="*")
+
+        row_passes = ctk.CTkFrame(self.extract_frame, fg_color="transparent")
+        row_passes.pack(fill="x", padx=5, pady=(0, 5))
+        ctk.CTkLabel(
+            row_passes,
+            text="Extraction Passes:",
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            text_color=COLORS["text"],
+            width=120,
+            anchor="w",
+        ).pack(side="left")
+        self.extract_passes_var = ctk.IntVar(value=DEFAULT_EXTRACT_PASSES)
+        self.extract_passes_spin = ctk.CTkEntry(
+            row_passes,
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            width=60,
+            fg_color=COLORS["bg_medium"],
+            text_color=COLORS["text"],
+            border_color=COLORS["border"],
+            textvariable=self.extract_passes_var,
+        )
+        self.extract_passes_spin.pack(side="left")
+
         # --- Session Controls ---
         self.start_btn = ctk.CTkButton(
             parent,
@@ -203,7 +279,20 @@ class ConfigFrame(ctk.CTkFrame):
             command=self._on_reset_click,
             state="disabled",
         )
-        self.reset_btn.pack(fill="x", padx=5, pady=(0, 5))
+        self.reset_btn.pack(fill="x", padx=5, pady=(0, 3))
+
+        # View Extractions button (hidden until session with extractions)
+        self.viz_btn = ctk.CTkButton(
+            parent,
+            text="View Extractions",
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            fg_color=COLORS["accent"],
+            hover_color="#5FBFE0",
+            text_color=COLORS["bg_dark"],
+            height=30,
+            command=self._on_view_extractions_click,
+        )
+        # Not packed initially - shown only when visualization is available
 
         # --- Status ---
         self.status_label = ctk.CTkLabel(
@@ -258,6 +347,12 @@ class ConfigFrame(ctk.CTkFrame):
         else:
             self.sub_frame.pack_forget()
 
+    def _toggle_extraction(self):
+        if self.extract_var.get():
+            self.extract_frame.pack(fill="x", padx=0, pady=(0, 5), after=self.extract_check)
+        else:
+            self.extract_frame.pack_forget()
+
     def _on_start_click(self):
         self._save_config()
         if self._on_start_session:
@@ -267,7 +362,11 @@ class ConfigFrame(ctk.CTkFrame):
         if self._on_reset_session:
             self._on_reset_session()
 
-    def set_session_active(self, active: bool):
+    def _on_view_extractions_click(self):
+        if self._on_view_extractions:
+            self._on_view_extractions()
+
+    def set_session_active(self, active: bool, has_viz: bool = False):
         """Toggle UI state between active session and configuration mode."""
         state = "disabled" if active else "normal"
         self.start_btn.configure(state=state)
@@ -278,6 +377,13 @@ class ConfigFrame(ctk.CTkFrame):
         self.sub_query_check.configure(state=state)
         self.max_depth_spin.configure(state=state)
         self.max_iter_spin.configure(state=state)
+        self.extract_check.configure(state=state)
+
+        # Show/hide View Extractions button
+        if active and has_viz:
+            self.viz_btn.pack(fill="x", padx=5, pady=(0, 3), after=self.reset_btn)
+        else:
+            self.viz_btn.pack_forget()
 
     def set_status(self, text: str):
         self.status_label.configure(text=f"Status: {text}")
@@ -307,6 +413,15 @@ class ConfigFrame(ctk.CTkFrame):
             "max_iterations": self.max_iter_var.get(),
             "verbose": self.verbose_var.get(),
             "custom_instructions": self.custom_instructions.get("1.0", "end-1c").strip(),
+            # Extraction settings
+            "extraction_enabled": self.extract_var.get(),
+            "extraction_schema": self.extract_schema_var.get(),
+            "extraction_model": self.extract_model_entry.get().strip() or DEFAULT_EXTRACT_MODEL,
+            "extraction_api_key": (
+                self.extract_api_key_entry.get().strip()
+                or os.getenv("LANGEXTRACT_API_KEY", "")
+            ),
+            "extraction_passes": self.extract_passes_var.get(),
         }
 
         if self.sub_query_var.get():
@@ -353,6 +468,11 @@ class ConfigFrame(ctk.CTkFrame):
             if sub_key:
                 api_keys[f"sub_{self.sub_backend_var.get()}"] = sub_key
 
+        # Save extraction API key
+        extract_key = self.extract_api_key_entry.get().strip()
+        if extract_key:
+            api_keys["langextract"] = extract_key
+
         config["api_keys"] = api_keys
         config["last_backend"] = self.backend_var.get()
         config["last_model"] = self.model_entry.get().strip()
@@ -361,6 +481,12 @@ class ConfigFrame(ctk.CTkFrame):
         if self.sub_query_var.get():
             config["last_sub_backend"] = self.sub_backend_var.get()
             config["last_sub_model"] = self.sub_model_entry.get().strip()
+
+        # Save extraction settings
+        config["extraction_enabled"] = self.extract_var.get()
+        config["extraction_schema"] = self.extract_schema_var.get()
+        config["extraction_model"] = self.extract_model_entry.get().strip()
+        config["extraction_passes"] = self.extract_passes_var.get()
 
         try:
             self._config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -405,3 +531,17 @@ class ConfigFrame(ctk.CTkFrame):
             sub_key_name = f"sub_{sub_backend}"
             if sub_key_name in api_keys:
                 self.sub_api_key_entry.insert(0, api_keys[sub_key_name])
+
+        # Restore extraction settings
+        if cfg.get("extraction_enabled"):
+            self.extract_var.set(True)
+            self._toggle_extraction()
+        if cfg.get("extraction_schema"):
+            self.extract_schema_var.set(cfg["extraction_schema"])
+        if cfg.get("extraction_model"):
+            self.extract_model_entry.delete(0, "end")
+            self.extract_model_entry.insert(0, cfg["extraction_model"])
+        if "langextract" in api_keys:
+            self.extract_api_key_entry.insert(0, api_keys["langextract"])
+        if cfg.get("extraction_passes"):
+            self.extract_passes_var.set(cfg["extraction_passes"])
