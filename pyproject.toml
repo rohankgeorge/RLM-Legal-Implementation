@@ -1,66 +1,62 @@
 [project]
-name = "rlms"
-authors = [
-    {name = "Alex Zhang", email = "altzhang@mit.edu"},
-]
+name = "rlm-legal-docs"
 version = "0.1.0"
-description = "Recursive Language Models."
+description = "Legal document query tool using Recursive Language Models"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
+authors = [
+    {name = "Rohan George", email = "rohankgeorge@users.noreply.github.com"},
+]
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Intended Audience :: Legal Industry",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
 dependencies = [
-    "anthropic>=0.75.0",
+    "rlms>=0.1.0",
     "customtkinter>=5.2.2",
-    "google-genai>=1.56.0",
-    "openai>=2.14.0",
-    "portkey-ai>=2.1.0",
-    "pypdf2>=3.0.1",
-    "pytest>=9.0.2",
     "python-docx>=1.2.0",
+    "pypdf2>=3.0.1",
     "python-dotenv>=1.2.1",
-    "requests>=2.32.5",
-    "rich>=13.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/alexzhang13/rlm"
-Repository = "https://github.com/alexzhang13/rlm"
-Issues = "https://github.com/alexzhang13/rlm/issues"
+Repository = "https://github.com/rohankgeorge/RLM-Legal-Implementation"
+"Original RLM Project" = "https://github.com/alexzhang13/rlm"
+
+[project.scripts]
+rlm-legal-gui = "rlm_legal_docs.cli:run_gui"
+rlm-legal-query = "rlm_legal_docs.cli:run_query"
 
 [project.optional-dependencies]
-modal = ["modal>=0.73.0", "dill>=0.3.7"]
-e2b = ["e2b-code-interpreter>=0.0.11", "dill>=0.3.7"]
-daytona = ["daytona>=0.128.1", "dill>=0.3.7"]
-prime = ["prime-sandboxes>=0.2.0", "dill>=0.3.7"]
-gui = ["customtkinter>=5.2.0", "PyPDF2>=3.0.0"]
+dev = [
+    "pre-commit>=4.5.1",
+    "ruff>=0.14.10",
+    "pytest>=8.0.0",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["rlm", "rlm.*"]
+include = ["rlm_legal_docs", "rlm_legal_docs.*"]
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1",
     "ruff>=0.14.10",
-    "ty>=0.0.7",
 ]
 test = [
     "pytest>=8.0.0",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=6.0.0",
 ]
 
 [tool.ruff]
