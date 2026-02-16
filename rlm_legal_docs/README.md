@@ -1,6 +1,6 @@
-# RLM Document Chat
+# RLM Legal Document Query GUI
 
-Desktop GUI for ingesting documents and querying them with the Recursive Learning Model (RLM). Supports `.docx`, `.pdf`, and `.txt` files with a chatbot-style interface.
+Desktop GUI for ingesting legal documents and querying them with Recursive Language Models (RLM). Supports `.docx`, `.pdf`, and `.txt` files with a chatbot-style interface.
 
 ## Prerequisites
 
@@ -18,7 +18,13 @@ uv sync
 ## Running the App
 
 ```bash
-uv run python docx_rlm_gui.py
+rlm-legal-gui
+```
+
+Or with uv:
+
+```bash
+uv run rlm-legal-gui
 ```
 
 ## Quick Start
@@ -76,16 +82,16 @@ Keys entered in the GUI are saved to `~/.rlm_gui_config.json` so you don't need 
 You can package the app as a single `.exe` using PyInstaller:
 
 ```bash
-uv add --dev pyinstaller
-uv run pyinstaller --onefile --windowed --name "RLM-DocChat" docx_rlm_gui.py
+pip install pyinstaller
+pyinstaller --onefile --windowed --name "RLM-LegalDocs" -m rlm_legal_docs.cli:run_gui
 ```
 
 The resulting executable will be in the `dist/` folder.
 
 > **Note:** If the app fails to find customtkinter assets at runtime, you may need to add them explicitly:
 > ```bash
-> uv run pyinstaller --onefile --windowed --name "RLM-DocChat" \
+> pyinstaller --onefile --windowed --name "RLM-LegalDocs" \
 >     --add-data "<path-to-customtkinter>;customtkinter" \
->     docx_rlm_gui.py
+>     -m rlm_legal_docs.cli:run_gui
 > ```
 > Find the customtkinter path with: `python -c "import customtkinter; print(customtkinter.__path__[0])"`

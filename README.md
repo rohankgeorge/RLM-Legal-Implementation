@@ -1,160 +1,120 @@
+# RLM Legal Document Query Tool
 
----
+Desktop GUI and CLI for querying legal documents using Recursive Language Models (RLM). Supports .docx, .pdf, and .txt files with intelligent recursive query processing.
 
-<h1 align="center" style="font-size:2.8em">
-<span>Recursive Language Models (<span style="color:orange">RLM</span>s)</span>
-</h1>
+## Features
 
-<p align="center" style="font-size:1.3em">
-  <a href="https://arxiv.org/abs/2512.24601">Full Paper</a> •
-  <a href="https://alexzhang13.github.io/blog/2025/rlm/">Blogpost</a> •
-  <a href="https://alexzhang13.github.io/rlm/">Documentation</a> •
-  <a href="https://github.com/alexzhang13/rlm-minimal">RLM Minimal</a>
-</p>
+- **Desktop GUI** with chatbot interface for interactive document analysis
+- **CLI tool** for batch processing and automation
+- **Multi-document ingestion** - load and query multiple documents simultaneously
+- **Format support** - .docx, .pdf, and .txt files
+- **Multiple LLM backends** - OpenAI, Anthropic, OpenRouter, Portkey, and more
+- **Recursive query processing** - leverages RLM for handling complex multi-step queries
 
-<p align="center">
-  <a href="https://github.com/alexzhang13/rlm/actions/workflows/style.yml">
-    <img src="https://github.com/alexzhang13/rlm/actions/workflows/style.yml/badge.svg" alt="Style" />
-  </a>
-  <a href="https://github.com/alexzhang13/rlm/actions/workflows/test.yml">
-    <img src="https://github.com/alexzhang13/rlm/actions/workflows/test.yml/badge.svg" alt="Test" />
-  </a>
-</p>
+## Quick Start
 
-<p align="center">
-  <a href="https://arxiv.org/abs/2512.24601">
-    <img src="media/paper_preview.png" alt="Paper Preview" width="300"/>
-  </a>
-</p>
+### Installation
 
-## Overview
-Recursive Language Models (RLMs) are a task-agnostic inference paradigm for language models (LMs) to handle near-infinite length contexts by enabling the LM to *programmatically* examine, decompose, and recursively call itself over its input. RLMs replace the canonical `llm.completion(prompt, model)` call with a `rlm.completion(prompt, model)` call. RLMs offload the context as a variable in a REPL environment that the LM can interact with and launch sub-LM calls inside of.
-
-This repository provides an extensible inference engine for using RLMs around standard API-based and local LLMs. The initial experiments and idea were proposed in a [blogpost](https://alexzhang13.github.io/blog/2025/rlm/) in 2025, with expanded results in an [arXiv preprint](https://arxiv.org/abs/2512.24601).
-
-> [!NOTE]
-> This repository contains inference code for RLMs with support for various sandbox environments. Open-source contributions are welcome. This repository is maintained by the authors of the paper from the MIT OASYS lab.
-
-## Quick Setup
-You can try out RLMs quickly by installing from PyPi:
 ```bash
-pip install rlms
+pip install rlm-legal-docs
 ```
 
-The default RLM client uses a REPL environment that runs on the host process through Python `exec` calls. It uses the same virtual environment as the host process (i.e. it will have access to the same dependencies), but with some limitations in its available global modules. As an example, we can call RLM completions using GPT-5-nano:
-```python
-from rlm import RLM
+Or install from source:
 
-rlm = RLM(
-    backend="openai",
-    backend_kwargs={"model_name": "gpt-5-nano"},
-    verbose=True,  # For printing to console with rich, disabled by default.
-)
-
-print(rlm.completion("Print me the first 100 powers of two, each on a newline.").response)
-```
-
-<details>
-<summary><b>Manual Setup</b></summary>
-
-Set up the dependencies with `uv` (or your virtual environment of choice):
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv init && uv venv --python 3.12  # change version as needed
-uv pip install -e .
+git clone https://github.com/rohankgeorge/RLM-Legal-Implementation.git
+cd RLM-Legal-Implementation
+pip install -e .
 ```
 
-This project includes a `Makefile` to simplify common tasks.
+### GUI Usage
 
-- `make install`: Install base dependencies.
-- `make check`: Run linter, formatter, and tests.
+Launch the desktop application:
 
-To run a quick test, the following will run an RLM query with the OpenAI client using your environment variable `OPENAI_API_KEY` (feel free to change this). This will generate console output as well as a log which you can use with the visualizer to explore the trajectories.
 ```bash
-make quickstart
+rlm-legal-gui
 ```
 
-</details>
+**Using the GUI:**
 
-## REPL Environments
-We support two types of REPL environments -- isolated, and non-isolated. Non-isolated environments (default) run code execution on the same machine as the RLM (e.g. through `exec`), which is pretty reasonable for some local low-risk tasks, like simple benchmarking, but can be problematic if the prompts or tool calls can interact with malicious users. Fully isolated environments used Cloud-based sandboxes (e.g. Prime Sandboxes, [Modal Sandboxes](https://modal.com/docs/guide/sandboxes)) to run code generated by the RLM, ensuring completely isolation from the host process. Environments can be added, but we natively support the following: `local` (default), `modal`, `prime`.
+1. **Select documents**: Click "Select Files" or "Select Folder" to load .docx, .pdf, or .txt files
+2. **Configure LLM**: Choose your LLM provider (OpenAI, Anthropic, etc.) and enter your API key
+3. **Ask questions**: Type questions about your documents in the chat interface
+4. **View results**: RLM will recursively process your query and display the results
 
-```python
-rlm = RLM(
-    environment="...", # "local", "docker", "modal", "prime"
-    environment_kwargs={...},
-)
-```
+### CLI Usage
 
-### Local Environments
-The default `local` environment `LocalREPL` runs in the same process as the RLM itself, with specified global and local namespaces for minimal security. Using this REPL is generally safe, but should not be used for production settings. It also shares the same virtual environment (e.g. Conda or uv) as the host process.
-
-#### Docker <img src="https://github.com/docker.png" alt="Docker" height="20" style="vertical-align: middle;"/> (*requires [Docker installed](https://docs.docker.com/desktop/setup/install/)*)
-We also support a Docker-based environment called `DockerREPL` that launches the REPL environment as a Docker image. By default, we use the `python:3.11-slim` image, but the user can specify custom images as well.
-
-### Isolated Environments
-We support several different REPL environments that run on separate, cloud-based machines. Whenever a recursive sub-call is made in these instances, it is requested from the host process.
-
-#### Modal Sandboxes <img src="https://github.com/modal-labs.png" alt="Modal" height="20" style="vertical-align: middle;"/>
-To use [Modal Sandboxes](https://modal.com/docs/guide/sandboxes) as the REPL environment, you need to install and authenticate your Modal account.
 ```bash
-uv add modal  # add modal library
-modal setup   # authenticate account
+# Interactive mode
+rlm-legal-query --folder ./documents --interactive
+
+# Single query
+rlm-legal-query --folder ./documents --query "What are the key contractual obligations?"
 ```
 
-#### Prime Intellect Sandboxes <img src="https://github.com/PrimeIntellect-ai.png" alt="Prime Intellect" height="20" style="vertical-align: middle;"/>
-> [!NOTE]
-> **Prime Intellect Sandboxes** are currently a beta feature. See the [documentation](https://docs.primeintellect.ai/sandboxes/overview) for more information. We noticed slow runtimes when using these sandboxes, which is currently an open issue.
+## Requirements
 
+- Python 3.11 or higher
+- API key for supported LLM provider (OpenAI, Anthropic, etc.)
 
-To use [Prime Sandboxes](https://docs.primeintellect.ai/sandboxes/sdk), install the SDK and set your API key:
+## Documentation
+
+- **GUI Guide**: See [rlm_legal_docs/README.md](rlm_legal_docs/README.md) for detailed GUI documentation
+- **Installation**: Standard pip installation or build from source
+- **Configuration**: API keys can be set via environment variables or through the GUI
+
+## Technology
+
+This tool is built on the [Recursive Language Models (RLM) library](https://github.com/alexzhang13/rlm) by Alex Zhang. RLM enables language models to programmatically examine, decompose, and recursively process contexts of near-infinite length.
+
+**What is RLM?**
+
+Recursive Language Models (RLMs) are a task-agnostic inference paradigm that allows language models to handle near-infinite length contexts by enabling the LM to programmatically examine, decompose, and recursively call itself over its input. This makes RLM particularly well-suited for legal document analysis where documents can be lengthy and complex.
+
+### Learn More About RLM
+
+- **Paper**: [Recursive Language Models (arXiv:2512.24601)](https://arxiv.org/abs/2512.24601)
+- **Documentation**: [alexzhang13.github.io/rlm](https://alexzhang13.github.io/rlm/)
+- **Blog Post**: [RLM Introduction](https://alexzhang13.github.io/blog/2025/rlm/)
+
+## Attribution
+
+See [ATTRIBUTION.md](ATTRIBUTION.md) for full attribution and citation information.
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+This project uses the RLM library (Copyright 2025 Alex Zhang) as a dependency under the MIT License.
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Development
+
+### Setup
+
 ```bash
-uv pip install -e ".[prime]"
-export PRIME_API_KEY=...
+git clone https://github.com/rohankgeorge/RLM-Legal-Implementation.git
+cd RLM-Legal-Implementation
+make install-dev
 ```
 
+### Run Tests
 
-### Model Providers
-We currently support most major clients (OpenAI, Anthropic), as well as the router platforms (OpenRouter, Portkey, LiteLLM). For local models, we recommend using vLLM (which interfaces with the [OpenAI client](https://github.com/alexzhang13/rlm/blob/main/rlm/clients/openai.py)). To view or add support for more clients, start by looking at [`rlm/clients/`](https://github.com/alexzhang13/rlm/tree/main/rlm/clients).
-
-## Relevant Reading
-* **[Dec '25]** [Recursive Language Models arXiv](https://arxiv.org/abs/2512.24601)
-* **[Oct '25]** [Recursive Language Models Blogpost](https://alexzhang13.github.io/blog/2025/rlm/)
-
-If you use this code or repository in your research, please cite:
-
-```bibtex
-@misc{zhang2025recursivelanguagemodels,
-      title={Recursive Language Models}, 
-      author={Alex L. Zhang and Tim Kraska and Omar Khattab},
-      year={2025},
-      eprint={2512.24601},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2512.24601}, 
-}
+```bash
+make test
 ```
 
-## Optional Debugging: Visualizing RLM Trajectories
-We additionally provide a simple visualizer tool to examine and view the code, sub-LM, and root-LM calls of an RLM trajectory. To save log files (`.jsonl`) on every completion call that can be viewed in the visualizer, initialize the `RLMLogger` object and pass it into the `RLM` on initialization:
-```python
-from rlm.logger import RLMLogger
-from rlm import RLM
+### Run Linting
 
-logger = RLMLogger(log_dir="./logs")
-rlm = RLM(
-    ...
-    logger=logger
-)
+```bash
+make lint
 ```
 
-To run the visualizer locally, we use Node.js and shadcn/ui:
-```
-cd visualizer/
-npm run dev        # default localhost:3001
-```
+### Build Package
 
-You'll have the option to select saved `.jsonl` files 
-<p align="center">
-  <img src="media/visualizer.png" alt="RLM Visualizer Example" width="800"/>
-</p>
+```bash
+python -m build
+```
