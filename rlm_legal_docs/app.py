@@ -9,9 +9,9 @@ from queue import Queue
 
 import customtkinter as ctk
 
-from gui.chat_frame import ChatFrame
-from gui.config_frame import ConfigFrame
-from gui.constants import (
+from rlm_legal_docs.chat_frame import ChatFrame
+from rlm_legal_docs.config_frame import ConfigFrame
+from rlm_legal_docs.constants import (
     COLORS,
     FONT_FAMILY,
     FONT_SIZE,
@@ -20,8 +20,8 @@ from gui.constants import (
     POLL_INTERVAL_MS,
     SIDEBAR_WIDTH,
 )
-from gui.file_frame import FileFrame
-from gui.workers import IngestWorker, QueryWorker
+from rlm_legal_docs.file_frame import FileFrame
+from rlm_legal_docs.workers import IngestWorker, QueryWorker
 
 from rlm import RLM
 from rlm.logger import RLMLogger

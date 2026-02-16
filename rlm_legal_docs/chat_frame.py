@@ -6,14 +6,14 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from gui.constants import (
+from rlm_legal_docs.constants import (
     COLORS,
     FONT_FAMILY,
     FONT_SIZE,
     FONT_SIZE_SMALL,
     FONT_SIZE_LARGE,
 )
-from gui.log_viewer import LogViewerWindow
+from rlm_legal_docs.log_viewer import LogViewerWindow
 
 
 class MessageBubble(ctk.CTkFrame):

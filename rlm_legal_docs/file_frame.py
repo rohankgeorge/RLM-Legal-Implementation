@@ -7,7 +7,7 @@ from tkinter import filedialog
 
 import customtkinter as ctk
 
-from gui.constants import (
+from rlm_legal_docs.constants import (
     COLORS,
     FONT_FAMILY,
     FONT_SIZE,

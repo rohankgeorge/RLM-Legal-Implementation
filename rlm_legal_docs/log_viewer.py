@@ -10,7 +10,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from gui.constants import COLORS, FONT_FAMILY, FONT_SIZE, FONT_SIZE_SMALL, FONT_SIZE_LARGE
+from rlm_legal_docs.constants import COLORS, FONT_FAMILY, FONT_SIZE, FONT_SIZE_SMALL, FONT_SIZE_LARGE
 
 
 def parse_log_file(log_path: str, start_iter: int = 0, end_iter: int | None = None) -> list[dict]:
