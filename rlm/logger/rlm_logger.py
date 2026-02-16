@@ -37,7 +37,7 @@ class RLMLogger:
             **metadata.to_dict(),
         }
 
-        with open(self.log_file_path, "a") as f:
+        with open(self.log_file_path, "a", encoding="utf-8") as f:
             json.dump(entry, f)
             f.write("\n")
 
@@ -54,7 +54,7 @@ class RLMLogger:
             **iteration.to_dict(),
         }
 
-        with open(self.log_file_path, "a") as f:
+        with open(self.log_file_path, "a", encoding="utf-8") as f:
             json.dump(entry, f)
             f.write("\n")
 
