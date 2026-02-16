@@ -126,28 +126,44 @@ class ConfigFrame(ctk.CTkFrame):
         row1 = ctk.CTkFrame(parent, fg_color="transparent")
         row1.pack(fill="x", padx=5, pady=(0, 5))
         ctk.CTkLabel(
-            row1, text="Max Depth:", font=(FONT_FAMILY, FONT_SIZE_SMALL),
-            text_color=COLORS["text"], width=100, anchor="w",
+            row1,
+            text="Max Depth:",
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            text_color=COLORS["text"],
+            width=100,
+            anchor="w",
         ).pack(side="left")
         self.max_depth_var = ctk.IntVar(value=1)
         self.max_depth_spin = ctk.CTkEntry(
-            row1, font=(FONT_FAMILY, FONT_SIZE_SMALL), width=60,
-            fg_color=COLORS["bg_medium"], text_color=COLORS["text"],
-            border_color=COLORS["border"], textvariable=self.max_depth_var,
+            row1,
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            width=60,
+            fg_color=COLORS["bg_medium"],
+            text_color=COLORS["text"],
+            border_color=COLORS["border"],
+            textvariable=self.max_depth_var,
         )
         self.max_depth_spin.pack(side="left")
 
         row2 = ctk.CTkFrame(parent, fg_color="transparent")
         row2.pack(fill="x", padx=5, pady=(0, 5))
         ctk.CTkLabel(
-            row2, text="Max Iterations:", font=(FONT_FAMILY, FONT_SIZE_SMALL),
-            text_color=COLORS["text"], width=100, anchor="w",
+            row2,
+            text="Max Iterations:",
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            text_color=COLORS["text"],
+            width=100,
+            anchor="w",
         ).pack(side="left")
         self.max_iter_var = ctk.IntVar(value=30)
         self.max_iter_spin = ctk.CTkEntry(
-            row2, font=(FONT_FAMILY, FONT_SIZE_SMALL), width=60,
-            fg_color=COLORS["bg_medium"], text_color=COLORS["text"],
-            border_color=COLORS["border"], textvariable=self.max_iter_var,
+            row2,
+            font=(FONT_FAMILY, FONT_SIZE_SMALL),
+            width=60,
+            fg_color=COLORS["bg_medium"],
+            text_color=COLORS["text"],
+            border_color=COLORS["border"],
+            textvariable=self.max_iter_var,
         )
         self.max_iter_spin.pack(side="left")
 
@@ -238,8 +254,7 @@ class ConfigFrame(ctk.CTkFrame):
 
     def _toggle_sub_query(self):
         if self.sub_query_var.get():
-            self.sub_frame.pack(fill="x", padx=0, pady=(0, 5),
-                                after=self.sub_query_check)
+            self.sub_frame.pack(fill="x", padx=0, pady=(0, 5), after=self.sub_query_check)
         else:
             self.sub_frame.pack_forget()
 

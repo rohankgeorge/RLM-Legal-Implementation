@@ -1,4 +1,5 @@
 """CLI entry points for RLM Legal Document Tools."""
+
 import io
 import os
 import sys
@@ -27,6 +28,7 @@ def run_gui():
     """Entry point for GUI application."""
     _fix_windows_encoding()
     from rlm_legal_docs.app import RLMChatApp
+
     app = RLMChatApp()
     app.mainloop()
 
@@ -34,4 +36,5 @@ def run_gui():
 def run_query():
     """Entry point for CLI query tool."""
     from rlm_legal_docs.query import main
+
     main()

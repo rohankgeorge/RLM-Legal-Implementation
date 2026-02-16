@@ -8,10 +8,9 @@ import traceback
 from pathlib import Path
 from queue import Queue
 
-from PyPDF2 import PdfReader
 from docx import Document
-
 from docx_rlm_query import build_structured_context, run_query
+from PyPDF2 import PdfReader
 
 
 def extract_text_from_docx(filepath: Path) -> str:
@@ -73,31 +72,36 @@ class IngestWorker:
                     errors.append(f"{fp.name}: {e}")
 
             if not docs:
-                self.result_queue.put({
-                    "type": "ingest_error",
-                    "error": "No documents could be loaded.\n" + "\n".join(errors),
-                })
+                self.result_queue.put(
+                    {
+                        "type": "ingest_error",
+                        "error": "No documents could be loaded.\n" + "\n".join(errors),
+                    }
+                )
                 return
 
             context = build_structured_context(docs)
-            self.result_queue.put({
-                "type": "ingest_done",
-                "docs": docs,
-                "context": context,
-                "errors": errors,
-            })
+            self.result_queue.put(
+                {
+                    "type": "ingest_done",
+                    "docs": docs,
+                    "context": context,
+                    "errors": errors,
+                }
+            )
         except Exception as e:
-            self.result_queue.put({
-                "type": "ingest_error",
-                "error": f"Ingestion failed: {e}\n{traceback.format_exc()}",
-            })
+            self.result_queue.put(
+                {
+                    "type": "ingest_error",
+                    "error": f"Ingestion failed: {e}\n{traceback.format_exc()}",
+                }
+            )
 
 
 class QueryWorker:
     """Runs an RLM query in a background thread."""
 
-    def __init__(self, rlm, context: str, query: str, result_queue: Queue,
-                 logger=None):
+    def __init__(self, rlm, context: str, query: str, result_queue: Queue, logger=None):
         self.rlm = rlm
         self.context = context
         self.query = query
@@ -126,8 +130,10 @@ class QueryWorker:
                 result["log_end_iter"] = end_iter
             self.result_queue.put(result)
         except Exception as e:
-            self.result_queue.put({
-                "type": "query_error",
-                "query": self.query,
-                "error": f"Query failed: {e}\n{traceback.format_exc()}",
-            })
+            self.result_queue.put(
+                {
+                    "type": "query_error",
+                    "query": self.query,
+                    "error": f"Query failed: {e}\n{traceback.format_exc()}",
+                }
+            )

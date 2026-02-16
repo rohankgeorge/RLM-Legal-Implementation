@@ -4,19 +4,24 @@ Parses .jsonl log files and displays metadata + per-iteration details.
 """
 
 import json
-import tkinter as tk
-from tkinter import filedialog
 from pathlib import Path
+from tkinter import filedialog
 
 import customtkinter as ctk
 
-from rlm_legal_docs.constants import COLORS, FONT_FAMILY, FONT_SIZE, FONT_SIZE_SMALL, FONT_SIZE_LARGE
+from rlm_legal_docs.constants import (
+    COLORS,
+    FONT_FAMILY,
+    FONT_SIZE,
+    FONT_SIZE_LARGE,
+    FONT_SIZE_SMALL,
+)
 
 
 def parse_log_file(log_path: str, start_iter: int = 0, end_iter: int | None = None) -> list[dict]:
     """Read a .jsonl log file and return entries in the given iteration range."""
     entries = []
-    with open(log_path, "r", encoding="utf-8") as f:
+    with open(log_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -73,7 +78,9 @@ def format_log_as_text(entries: list[dict]) -> str:
             # Sub-calls
             sub_calls = entry.get("sub_llm_calls", [])
             for i, sc in enumerate(sub_calls, 1):
-                lines.append(f"\n[Sub-Call {i}] model={sc.get('model', '?')}  ({sc.get('time', 0):.2f}s)")
+                lines.append(
+                    f"\n[Sub-Call {i}] model={sc.get('model', '?')}  ({sc.get('time', 0):.2f}s)"
+                )
                 prompt = sc.get("prompt", "")
                 if prompt:
                     lines.append(f"  Prompt: {prompt[:300]}...")
@@ -84,7 +91,7 @@ def format_log_as_text(entries: list[dict]) -> str:
             # Final answer
             final = entry.get("final_answer")
             if final:
-                lines.append(f"\n[Final Answer Found]")
+                lines.append("\n[Final Answer Found]")
                 lines.append(final[:1000])
 
             lines.append("")
@@ -295,6 +302,7 @@ class LogViewerWindow(ctk.CTkToplevel):
         if not dest:
             return
         import shutil
+
         shutil.copy2(self._log_path, dest)
 
     def _copy_all(self):

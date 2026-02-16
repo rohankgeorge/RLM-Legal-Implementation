@@ -13,7 +13,6 @@ from rlm_legal_docs.constants import (
     FONT_SIZE,
     FONT_SIZE_SMALL,
     SUPPORTED_EXTENSIONS,
-    FILE_TYPE_FILTERS,
 )
 
 
@@ -91,7 +90,8 @@ class FileFrame(ctk.CTkFrame):
             return
         folder_path = Path(folder)
         files = sorted(
-            f for f in folder_path.iterdir()
+            f
+            for f in folder_path.iterdir()
             if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS
         )
         if files:
@@ -138,12 +138,6 @@ class FileFrame(ctk.CTkFrame):
             var = ctk.BooleanVar(value=True)
             self._file_checks[str(fp)] = var
 
-            # File type icon
-            ext = fp.suffix.lower()
-            icon = {"docx": "\U0001f4c4", ".pdf": "\U0001f4d1", ".txt": "\U0001f4dd"}.get(
-                ext, "\U0001f4c4"
-            )
-
             cb = ctk.CTkCheckBox(
                 self.file_list_frame,
                 text=f" {fp.name}",
@@ -157,11 +151,7 @@ class FileFrame(ctk.CTkFrame):
 
     def get_checked_files(self) -> list[Path]:
         """Return list of file paths that are currently checked."""
-        return [
-            Path(fp_str)
-            for fp_str, var in self._file_checks.items()
-            if var.get()
-        ]
+        return [Path(fp_str) for fp_str, var in self._file_checks.items() if var.get()]
 
     def get_file_count(self) -> int:
         """Return the number of checked files."""

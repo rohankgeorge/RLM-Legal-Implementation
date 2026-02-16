@@ -20,14 +20,13 @@ import sys
 from pathlib import Path
 
 from docx import Document
-
 from rlm import RLM
 from rlm.logger import RLMLogger
-
 
 # ---------------------------------------------------------------------------
 # DOCX ingestion
 # ---------------------------------------------------------------------------
+
 
 def extract_text_from_docx(filepath: Path) -> str:
     """Extract all paragraph text from a single .docx file."""
@@ -60,9 +59,7 @@ def build_structured_context(docs: list[dict[str, str]]) -> str:
     """Concatenate extracted documents into a structured plaintext context."""
     sections: list[str] = []
     for i, doc in enumerate(docs, 1):
-        sections.append(
-            f"===== DOCUMENT {i}: {doc['name']} =====\n\n{doc['text']}"
-        )
+        sections.append(f"===== DOCUMENT {i}: {doc['name']} =====\n\n{doc['text']}")
     header = (
         f"The following context contains {len(docs)} document(s) "
         "extracted from DOCX files.\n"
@@ -74,6 +71,7 @@ def build_structured_context(docs: list[dict[str, str]]) -> str:
 # ---------------------------------------------------------------------------
 # RLM session
 # ---------------------------------------------------------------------------
+
 
 def create_rlm(args: argparse.Namespace) -> RLM:
     """Build an RLM instance from CLI arguments."""
@@ -121,6 +119,7 @@ def run_query(rlm: RLM, context: str, query: str) -> str:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="Ingest DOCX files and run RLM queries against them.",
@@ -137,7 +136,8 @@ def parse_args() -> argparse.Namespace:
     # --- query source (mutually exclusive) ---
     qgroup = p.add_mutually_exclusive_group(required=True)
     qgroup.add_argument(
-        "--query", "-q",
+        "--query",
+        "-q",
         type=str,
         help="Single query string to run.",
     )
@@ -147,7 +147,8 @@ def parse_args() -> argparse.Namespace:
         help="Path to a text file with one query per line.",
     )
     qgroup.add_argument(
-        "--interactive", "-i",
+        "--interactive",
+        "-i",
         action="store_true",
         help="Enter an interactive query loop.",
     )

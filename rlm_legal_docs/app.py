@@ -3,18 +3,19 @@ Main application window for RLM Document Chat.
 Wires together the file selector, config sidebar, and chat frame.
 """
 
-import os
 import tempfile
 from queue import Queue
 
 import customtkinter as ctk
+from rlm import RLM
+from rlm.logger import RLMLogger
+from rlm.utils.prompts import RLM_SYSTEM_PROMPT
 
 from rlm_legal_docs.chat_frame import ChatFrame
 from rlm_legal_docs.config_frame import ConfigFrame
 from rlm_legal_docs.constants import (
     COLORS,
     FONT_FAMILY,
-    FONT_SIZE,
     FONT_SIZE_LARGE,
     FONT_SIZE_SMALL,
     POLL_INTERVAL_MS,
@@ -22,10 +23,6 @@ from rlm_legal_docs.constants import (
 )
 from rlm_legal_docs.file_frame import FileFrame
 from rlm_legal_docs.workers import IngestWorker, QueryWorker
-
-from rlm import RLM
-from rlm.logger import RLMLogger
-from rlm.utils.prompts import RLM_SYSTEM_PROMPT
 
 
 class RLMChatApp(ctk.CTk):
@@ -82,8 +79,9 @@ class RLMChatApp(ctk.CTk):
         content_frame.pack(fill="both", expand=True)
 
         # --- Sidebar (left) ---
-        sidebar = ctk.CTkFrame(content_frame, fg_color=COLORS["bg_dark"],
-                                width=SIDEBAR_WIDTH, corner_radius=0)
+        sidebar = ctk.CTkFrame(
+            content_frame, fg_color=COLORS["bg_dark"], width=SIDEBAR_WIDTH, corner_radius=0
+        )
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
 
@@ -167,10 +165,12 @@ class RLMChatApp(ctk.CTk):
         if "sub_query" in config:
             sub = config["sub_query"]
             other_backends = [sub["backend"]]
-            other_backend_kwargs = [{
-                "model_name": sub["model"],
-                "api_key": sub["api_key"],
-            }]
+            other_backend_kwargs = [
+                {
+                    "model_name": sub["model"],
+                    "api_key": sub["api_key"],
+                }
+            ]
 
         # Create logger for execution tracing
         self._logger = RLMLogger(log_dir=self._log_dir)
@@ -222,8 +222,9 @@ class RLMChatApp(ctk.CTk):
         self.chat_frame.set_input_enabled(False)
         self._update_status("Status: Processing query...")
 
-        worker = QueryWorker(self._rlm, self._context, query, self._result_queue,
-                             logger=self._logger)
+        worker = QueryWorker(
+            self._rlm, self._context, query, self._result_queue, logger=self._logger
+        )
         worker.start()
 
     def _poll_results(self):
@@ -295,9 +296,7 @@ class RLMChatApp(ctk.CTk):
         self._query_active = False
         self.chat_frame.set_input_enabled(True)
         config = self.config_frame.get_config()
-        self._update_status(
-            f"Status: Session active | {config['backend']}/{config['model']}"
-        )
+        self._update_status(f"Status: Session active | {config['backend']}/{config['model']}")
 
     def _handle_query_error(self, result: dict):
         self.chat_frame.add_error_message(result["error"])

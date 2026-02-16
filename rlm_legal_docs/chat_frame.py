@@ -11,7 +11,6 @@ from rlm_legal_docs.constants import (
     FONT_FAMILY,
     FONT_SIZE,
     FONT_SIZE_SMALL,
-    FONT_SIZE_LARGE,
 )
 from rlm_legal_docs.log_viewer import LogViewerWindow
 
@@ -54,15 +53,19 @@ class MessageBubble(ctk.CTkFrame):
         self.after(10, self._auto_resize)
 
         # Right-click context menu
-        self._context_menu = tk.Menu(self, tearoff=0, bg=COLORS["bg_medium"],
-                                      fg=COLORS["text"], activebackground=COLORS["bg_light"])
+        self._context_menu = tk.Menu(
+            self,
+            tearoff=0,
+            bg=COLORS["bg_medium"],
+            fg=COLORS["text"],
+            activebackground=COLORS["bg_light"],
+        )
         self._context_menu.add_command(label="Copy Selection", command=self._copy_selection)
         self._context_menu.add_command(label="Copy All", command=self._copy_all)
         self.textbox.bind("<Button-3>", self._show_context_menu)
 
     def _auto_resize(self):
         """Resize the textbox to fit its content."""
-        lines = self._text.count("\n") + 1
         # Estimate characters per line based on widget width
         widget_width = self.textbox.winfo_width()
         if widget_width < 50:
@@ -207,8 +210,13 @@ class ChatFrame(ctk.CTkFrame):
         bubble.pack(fill="x", padx=(40, 5), pady=3, anchor="e")
         self._scroll_to_bottom()
 
-    def add_rlm_message(self, text: str, log_file: str | None = None,
-                        log_start_iter: int = 0, log_end_iter: int | None = None):
+    def add_rlm_message(
+        self,
+        text: str,
+        log_file: str | None = None,
+        log_start_iter: int = 0,
+        log_end_iter: int | None = None,
+    ):
         """Add an RLM response bubble to the chat, optionally with a View Log button."""
         self._remove_thinking()
         bubble = MessageBubble(self.chat_scroll, sender="RLM", text=text, is_user=False)
@@ -225,8 +233,9 @@ class ChatFrame(ctk.CTkFrame):
                 anchor="w",
                 width=140,
                 height=24,
-                command=lambda lf=log_file, si=log_start_iter, ei=log_end_iter:
-                    self._open_log_viewer(lf, si, ei),
+                command=lambda lf=log_file,
+                si=log_start_iter,
+                ei=log_end_iter: self._open_log_viewer(lf, si, ei),
             )
             log_btn.pack(padx=(10, 40), pady=(0, 4), anchor="w")
 
