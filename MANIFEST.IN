@@ -1,8 +1,9 @@
 include README.md
 include LICENSE
+include ATTRIBUTION.md
 include pyproject.toml
-recursive-include rlm *.py
+recursive-include rlm_legal_docs *.py
 global-exclude *.pyc
 global-exclude __pycache__
 global-exclude .DS_Store
-global-exclude *.egg-info 
+global-exclude *.egg-info
