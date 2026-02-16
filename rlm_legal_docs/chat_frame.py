@@ -216,8 +216,9 @@ class ChatFrame(ctk.CTkFrame):
         log_file: str | None = None,
         log_start_iter: int = 0,
         log_end_iter: int | None = None,
+        enriched=None,
     ):
-        """Add an RLM response bubble to the chat, optionally with a View Log button."""
+        """Add an RLM response bubble to the chat, optionally with log and citation info."""
         self._remove_thinking()
         bubble = MessageBubble(self.chat_scroll, sender="RLM", text=text, is_user=False)
         bubble.pack(fill="x", padx=(5, 40), pady=3, anchor="w")
@@ -238,6 +239,33 @@ class ChatFrame(ctk.CTkFrame):
                 ei=log_end_iter: self._open_log_viewer(lf, si, ei),
             )
             log_btn.pack(padx=(10, 40), pady=(0, 4), anchor="w")
+
+        # Display citation sources if available
+        if enriched and hasattr(enriched, "citations") and enriched.citations:
+            verified = [c for c in enriched.citations if c.verified]
+            unverified = [c for c in enriched.citations if not c.verified]
+
+            lines = []
+            if verified:
+                for c in verified:
+                    lines.append(f"  [{c.doc_name}, chars {c.char_start}-{c.char_end}]")
+            if unverified:
+                for c in unverified:
+                    lines.append(
+                        f"  [{c.doc_name}, chars {c.char_start}-{c.char_end}] (unverified)"
+                    )
+
+            sources_text = f"Sources ({len(enriched.citations)}):\n" + "\n".join(lines)
+            src_label = ctk.CTkLabel(
+                self.chat_scroll,
+                text=sources_text,
+                font=(FONT_FAMILY, FONT_SIZE_SMALL),
+                text_color=COLORS["muted"],
+                anchor="w",
+                justify="left",
+                wraplength=500,
+            )
+            src_label.pack(padx=(10, 40), pady=(0, 4), anchor="w")
 
         self._scroll_to_bottom()
 
