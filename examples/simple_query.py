@@ -3,7 +3,9 @@ Simple example of using RLM Legal Document tools programmatically.
 
 This example demonstrates how to use the RLM library to query a legal document.
 """
+
 import os
+
 from rlm import RLM
 
 
