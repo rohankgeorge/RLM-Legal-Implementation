@@ -35,6 +35,7 @@ def run_gui():
 
 def run_query():
     """Entry point for CLI query tool."""
+    _fix_windows_encoding()
     from rlm_legal_docs.query import main
 
     main()

@@ -19,34 +19,32 @@ import os
 import sys
 from pathlib import Path
 
-from docx import Document
 from rlm import RLM
 from rlm.logger import RLMLogger
 
-# ---------------------------------------------------------------------------
-# DOCX ingestion
-# ---------------------------------------------------------------------------
+from rlm_legal_docs.constants import SUPPORTED_EXTENSIONS
+from rlm_legal_docs.readers import extract_text
 
-
-def extract_text_from_docx(filepath: Path) -> str:
-    """Extract all paragraph text from a single .docx file."""
-    doc = Document(str(filepath))
-    paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-    return "\n".join(paragraphs)
+# ---------------------------------------------------------------------------
+# Document ingestion
+# ---------------------------------------------------------------------------
 
 
 def ingest_folder(folder: Path) -> list[dict[str, str]]:
-    """Walk *folder* and return a list of {name, text} dicts for every .docx."""
+    """Walk *folder* and return a list of {name, text} dicts for all supported files."""
     docs: list[dict[str, str]] = []
-    docx_files = sorted(folder.glob("*.docx"))
+    files = sorted(
+        f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS
+    )
 
-    if not docx_files:
-        print(f"No .docx files found in {folder}")
+    if not files:
+        print(f"No supported files found in {folder}")
+        print(f"  (supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))})")
         sys.exit(1)
 
-    for fp in docx_files:
+    for fp in files:
         print(f"  Reading: {fp.name}")
-        text = extract_text_from_docx(fp)
+        text = extract_text(fp)
         if text:
             docs.append({"name": fp.name, "text": text})
         else:
